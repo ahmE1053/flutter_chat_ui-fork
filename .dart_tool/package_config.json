@@ -308,8 +308,8 @@
       "languageVersion": "2.12"
     },
     {
-      "name": "scroll_to_index",
-      "rootUri": "file:///Users/ahmedshawky/.pub-cache/hosted/pub.dev/scroll_to_index-3.0.1",
+      "name": "scrollview_observer",
+      "rootUri": "file:///Users/ahmedshawky/.pub-cache/hosted/pub.dev/scrollview_observer-1.26.0",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
@@ -464,7 +464,7 @@
       "languageVersion": "2.19"
     }
   ],
-  "generated": "2025-03-29T10:37:42.585534Z",
+  "generated": "2025-04-07T18:52:33.936096Z",
   "generator": "pub",
   "generatorVersion": "3.7.2",
   "flutterRoot": "file:///Users/ahmedshawky/flutter",

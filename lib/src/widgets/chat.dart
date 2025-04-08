@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:intl/intl.dart';
 import 'package:photo_view/photo_view.dart' show PhotoViewComputedScale;
-import 'package:scroll_to_index/scroll_to_index.dart';
+import 'package:scrollview_observer/scrollview_observer.dart';
 
 import '../chat_l10n.dart';
 import '../chat_theme.dart';
@@ -84,7 +84,7 @@ class Chat extends StatefulWidget {
     this.onMessageVisibilityChanged,
     this.onPreviewDataFetched,
     required this.onSendPressed,
-    this.scrollController,
+    required this.scrollController,
     this.scrollPhysics,
     this.scrollToUnreadOptions = const ScrollToUnreadOptions(),
     this.showUserAvatars = false,
@@ -270,7 +270,7 @@ class Chat extends StatefulWidget {
 
   /// See [ChatList.scrollController].
   /// If provided, you cannot use the scroll to message functionality.
-  final AutoScrollController? scrollController;
+  final ListObserverController scrollController;
 
   /// See [ChatList.scrollPhysics].
   final ScrollPhysics? scrollPhysics;
@@ -353,13 +353,13 @@ class ChatState extends State<Chat> {
   bool _hadScrolledToUnreadOnOpen = false;
   bool _isImageViewVisible = false;
 
-  late final AutoScrollController _scrollController;
+  late final ListObserverController _scrollController;
 
   @override
   void initState() {
     super.initState();
 
-    _scrollController = widget.scrollController ?? AutoScrollController();
+    _scrollController = widget.scrollController;
 
     didUpdateWidget(widget);
   }
@@ -368,8 +368,9 @@ class ChatState extends State<Chat> {
   void scrollToUnreadHeader() {
     final unreadHeaderIndex = chatMessageAutoScrollIndexById[_unreadHeaderId];
     if (unreadHeaderIndex != null) {
-      _scrollController.scrollToIndex(
-        unreadHeaderIndex,
+      _scrollController.animateTo(
+        index: unreadHeaderIndex,
+        curve: Curves.linearToEaseOut,
         duration: widget.scrollToUnreadOptions.scrollDuration,
       );
     }
@@ -379,29 +380,27 @@ class ChatState extends State<Chat> {
   void scrollToMessage(
     String id, {
     Duration? scrollDuration,
-    bool withHighlight = false,
-    Duration? highlightDuration,
-    AutoScrollPosition? preferPosition,
+
   }) async {
-    await _scrollController.scrollToIndex(
-      chatMessageAutoScrollIndexById[id]!,
-      duration: scrollDuration ?? scrollAnimationDuration,
-      preferPosition: preferPosition ?? AutoScrollPosition.middle,
+    await _scrollController.animateTo(
+      index: chatMessageAutoScrollIndexById[id]!,
+      duration: scrollDuration ?? const Duration(milliseconds: 250),
+      curve: Curves.linear,
     );
-    if (withHighlight) {
-      await _scrollController.highlight(
-        chatMessageAutoScrollIndexById[id]!,
-        highlightDuration: highlightDuration ?? const Duration(seconds: 3),
-      );
-    }
+    // if (withHighlight) {
+    //   await _scrollController.highlight(
+    //     chatMessageAutoScrollIndexById[id]!,
+    //     highlightDuration: highlightDuration ?? const Duration(seconds: 3),
+    //   );
+    // }
   }
 
   /// Highlight the message with the specified [id].
-  void highlightMessage(String id, {Duration? duration}) =>
-      _scrollController.highlight(
-        chatMessageAutoScrollIndexById[id]!,
-        highlightDuration: duration ?? const Duration(seconds: 3),
-      );
+  void highlightMessage(String id, {Duration? duration}) {}
+      // _scrollController.highlight(
+      //   chatMessageAutoScrollIndexById[id]!,
+      //   highlightDuration: duration ?? const Duration(seconds: 3),
+      // );
 
   Widget _emptyStateBuilder() =>
       widget.emptyState ??
@@ -453,13 +452,8 @@ class ChatState extends State<Chat> {
         height: object.height,
       );
     } else if (object is UnreadHeaderData) {
-      return AutoScrollTag(
-        controller: _scrollController,
-        index: index ?? -1,
-        key: const Key('unread_header'),
-        child: UnreadHeader(
-          marginTop: object.marginTop,
-        ),
+      return UnreadHeader(
+        marginTop: object.marginTop,
       );
     } else {
       final map = object as Map<String, Object>;
@@ -528,13 +522,7 @@ class ChatState extends State<Chat> {
             : widget.slidableMessageBuilder!(message, msgWidget);
       }
 
-      return AutoScrollTag(
-        controller: _scrollController,
-        index: index ?? -1,
-        key: Key('scroll-${message.id}'),
-        highlightColor: widget.theme.highlightMessageColor,
-        child: messageWidget,
-      );
+      return messageWidget;
     }
   }
 
@@ -608,7 +596,6 @@ class ChatState extends State<Chat> {
   @override
   void dispose() {
     _galleryPageController?.dispose();
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -657,7 +644,8 @@ class ChatState extends State<Chat> {
                                     onEndReached: widget.onEndReached,
                                     onEndReachedThreshold:
                                         widget.onEndReachedThreshold,
-                                    scrollController: _scrollController,
+                                    scrollController:
+                                        _scrollController.controller!,
                                     scrollPhysics: widget.scrollPhysics,
                                     typingIndicatorOptions:
                                         widget.typingIndicatorOptions,
