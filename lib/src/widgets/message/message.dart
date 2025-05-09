@@ -48,6 +48,7 @@ class Message extends StatelessWidget {
     required this.showAvatar,
     required this.showName,
     required this.showStatus,
+    required this.avatarBottomOffset,
     required this.isLeftStatus,
     required this.showUserAvatars,
     this.textMessageBuilder,
@@ -64,6 +65,8 @@ class Message extends StatelessWidget {
   /// This is to allow custom user avatar builder
   /// By using this we can fetch newest user info based on id.
   final Widget Function(types.User author)? avatarBuilder;
+
+  final double? Function(types.Message message) avatarBottomOffset;
 
   /// Customize the default bubble using this function. `child` is a content
   /// you should render inside your bubble, `message` is a current message
@@ -194,13 +197,16 @@ class Message extends StatelessWidget {
   Widget _avatarBuilder() => showAvatar &&
           (message.metadata == null ||
               !message.metadata!.containsKey('hideAvatar'))
-      ? avatarBuilder?.call(message.author) ??
-          UserAvatar(
-            author: message.author,
-            bubbleRtlAlignment: bubbleRtlAlignment,
-            imageHeaders: imageHeaders,
-            onAvatarTap: onAvatarTap,
-          )
+      ? Padding(
+          padding: EdgeInsets.only(bottom: avatarBottomOffset(message) ?? 0),
+          child: avatarBuilder?.call(message.author) ??
+              UserAvatar(
+                author: message.author,
+                bubbleRtlAlignment: bubbleRtlAlignment,
+                imageHeaders: imageHeaders,
+                onAvatarTap: onAvatarTap,
+              ),
+        )
       : const SizedBox(width: 40);
 
   Widget _bubbleBuilder(

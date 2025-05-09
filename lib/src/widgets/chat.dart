@@ -97,6 +97,8 @@ class Chat extends StatefulWidget {
     this.typingIndicatorOptions = const TypingIndicatorOptions(),
     this.usePreviewData = true,
     required this.user,
+    required this.onSliverContext,
+    required this.avatarBottomOffset,
     this.userAgent,
     this.useTopSafeAreaInset,
     this.videoMessageBuilder,
@@ -111,6 +113,7 @@ class Chat extends StatefulWidget {
 
   /// See [Message.avatarBuilder].
   final Widget Function(types.User author)? avatarBuilder;
+  final void Function(BuildContext context, List<Object> items) onSliverContext;
 
   /// See [Message.bubbleBuilder].
   final Widget Function(
@@ -125,6 +128,8 @@ class Chat extends StatefulWidget {
 
   /// Allows you to replace the default Input widget e.g. if you want to create a channel view. If you're looking for the bottom widget added to the chat list, see [listBottomWidget] instead.
   final Widget? customBottomWidget;
+
+  final double? Function(types.Message message) avatarBottomOffset;
 
   /// If [dateFormat], [dateLocale] and/or [timeFormat] is not enough to customize date headers in your case, use this to return an arbitrary string based on a [DateTime] of a particular message. Can be helpful to return "Today" if [DateTime] is today. IMPORTANT: this will replace all default date headers, so you must handle all cases yourself, like for example today, yesterday and before. Or you can just return the same date header for any message.
   final String Function(DateTime)? customDateHeaderText;
@@ -270,7 +275,7 @@ class Chat extends StatefulWidget {
 
   /// See [ChatList.scrollController].
   /// If provided, you cannot use the scroll to message functionality.
-  final ListObserverController scrollController;
+  final SliverObserverController scrollController;
 
   /// See [ChatList.scrollPhysics].
   final ScrollPhysics? scrollPhysics;
@@ -353,7 +358,7 @@ class ChatState extends State<Chat> {
   bool _hadScrolledToUnreadOnOpen = false;
   bool _isImageViewVisible = false;
 
-  late final ListObserverController _scrollController;
+  late final SliverObserverController _scrollController;
 
   @override
   void initState() {
@@ -380,7 +385,6 @@ class ChatState extends State<Chat> {
   void scrollToMessage(
     String id, {
     Duration? scrollDuration,
-
   }) async {
     await _scrollController.animateTo(
       index: chatMessageAutoScrollIndexById[id]!,
@@ -397,10 +401,11 @@ class ChatState extends State<Chat> {
 
   /// Highlight the message with the specified [id].
   void highlightMessage(String id, {Duration? duration}) {}
-      // _scrollController.highlight(
-      //   chatMessageAutoScrollIndexById[id]!,
-      //   highlightDuration: duration ?? const Duration(seconds: 3),
-      // );
+
+  // _scrollController.highlight(
+  //   chatMessageAutoScrollIndexById[id]!,
+  //   highlightDuration: duration ?? const Duration(seconds: 3),
+  // );
 
   Widget _emptyStateBuilder() =>
       widget.emptyState ??
@@ -478,6 +483,7 @@ class ChatState extends State<Chat> {
           audioMessageBuilder: widget.audioMessageBuilder,
           avatarBuilder: widget.avatarBuilder,
           bubbleBuilder: widget.bubbleBuilder,
+          avatarBottomOffset: widget.avatarBottomOffset,
           bubbleRtlAlignment: widget.bubbleRtlAlignment,
           customMessageBuilder: widget.customMessageBuilder,
           customStatusBuilder: widget.customStatusBuilder,
@@ -628,6 +634,7 @@ class ChatState extends State<Chat> {
                                     BoxConstraints constraints,
                                   ) =>
                                       ChatList(
+                                    onSliverContext: widget.onSliverContext,
                                     bottomWidget: widget.listBottomWidget,
                                     bubbleRtlAlignment:
                                         widget.bubbleRtlAlignment!,
@@ -644,8 +651,7 @@ class ChatState extends State<Chat> {
                                     onEndReached: widget.onEndReached,
                                     onEndReachedThreshold:
                                         widget.onEndReachedThreshold,
-                                    scrollController:
-                                        _scrollController.controller!,
+                                    scrollController: _scrollController,
                                     scrollPhysics: widget.scrollPhysics,
                                     typingIndicatorOptions:
                                         widget.typingIndicatorOptions,
